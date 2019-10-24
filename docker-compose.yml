@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+  web:
+    #stdin_open: true
+    #tty: true
+    image: uwdrf
+    command: uwsgi --socket=web:8001  --module tutorial.wsgi #python manage.py runserver 0.0.0.0:8001
+    volumes:
+      - .:/code
+    ports:
+      - "8001:8001"
+    links:
+      - redis
+  rq:
+    image: uwdrf
+    command: python manage.py rqworker 
+    volumes:
+      - .:/code
+    links:
+      - redis
+    
+  redis:
+    image: redis:3.2-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "8000:8000"
+      - "80:80"
+    volumes:
+      - ./nginx:/etc/nginx:ro
+      - ./static:/srv/static:ro
+    links:
+      - web  
+    depends_on:
+      - web  
+
+volumes:  
+  redis_data: 
